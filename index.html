@@ -234,6 +234,15 @@ textarea:focus {
     </div>
     <p class="hint">예: <code>"answer": "추상화"</code> · 같은 문제 안에서 보기 텍스트는 중복되지 않게 작성하세요.</p>
   </section>
+  <section class="panel">
+  <h2>이미지 JSON 관리</h2>
+  <p>images.json 파일을 선택하면 이미지 데이터를 불러옵니다.</p>
+
+  <input type="file" id="imageJsonFile" accept=".json,application/json">
+
+  <p id="imageStatus">아직 불러온 이미지가 없습니다.</p>
+  <div id="imagePreview"></div>
+</section>
 </main>
 <footer>문제와 답안은 이 페이지 안에서만 처리되며 서버로 전송되지 않습니다.</footer>
 
