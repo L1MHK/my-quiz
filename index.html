@@ -255,7 +255,9 @@ let questions = structuredClone(initialQuestions);
 let graded = false;
 const $ = id => document.getElementById(id);
 // 이미지 JSON 저장 공간
-let imageLibrary = {};
+let imageLibrary = JSON.parse(
+  localStorage.getItem("myQuizImages") || "{}"
+);
 
 // 이미지 JSON 파일 업로드
 $("imageJsonFile").addEventListener("change", async (event) => {
@@ -271,7 +273,7 @@ $("imageJsonFile").addEventListener("change", async (event) => {
     }
 
     imageLibrary = json.images;
-
+    localStorage.setItem("myQuizImages", JSON.stringify(imageLibrary));
     $("imageStatus").textContent =
       `${Object.keys(imageLibrary).length}개 이미지를 불러왔습니다.`;
 
