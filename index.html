@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>데이터 모델링 퀴즈 연습</title>
+<title>퀴즈 연습</title>
 <style>
 :root {
   color-scheme: dark;
@@ -181,7 +181,12 @@ textarea:focus {
 .progress {
   background: #303644;
 }
-
+.question-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0;
+}
 .progress > div {
   background: var(--primary);
 }
@@ -241,13 +246,9 @@ textarea:focus {
     <p class="hint">예: <code>"answer": "추상화"</code> · 같은 문제 안에서 보기 텍스트는 중복되지 않게 작성하세요.</p>
   </section>
   <section class="panel">
-  <h2>이미지 JSON 관리</h2>
-  <p>images.json 파일을 선택하면 이미지 데이터를 불러옵니다.</p>
+  <h2>JSON 업로드</h2>
+  <p>json 파일의 데이터를 불러옵니다.</p>
 
-  <input type="file" id="imageJsonFile" accept=".json,application/json">
-
-  <p id="imageStatus">아직 불러온 이미지가 없습니다.</p>
-  <div id="imagePreview"></div>
   <input type="file" id="questionJsonFile" accept=".json">
   <span id="questionStatus"></span>
 </section>
@@ -269,30 +270,40 @@ let imageLibrary = JSON.parse(
 );
 
 // 이미지 JSON 파일 업로드
-$("imageJsonFile").addEventListener("change", async (event) => {
+$("questionJsonFile").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
   try {
-    const text = await file.text();
-    const json = JSON.parse(text);
+    const json = JSON.parse(await file.text());
 
-    if (!json.images || typeof json.images !== "object") {
-      throw new Error("images 항목이 없는 JSON입니다.");
+    if (!Array.isArray(json.questions)) {
+      throw new Error("questions 배열이 없는 JSON입니다.");
     }
 
-    imageLibrary = json.images;
-    localStorage.setItem("myQuizImages", JSON.stringify(imageLibrary));
-    $("imageStatus").textContent =
-      `${Object.keys(imageLibrary).length}개 이미지를 불러왔습니다.`;
+    json.questions.forEach((q, i) => {
+      if (
+        (!q.image && (!q.question || !Array.isArray(q.options))) ||
+        !q.answer
+      ) {
+        throw new Error(`${i + 1}번 문제의 질문 또는 이미지, 정답이 없습니다.`);
+      }
+    });
 
-    showImagePreview();
+    questions = json.questions;
 
-    // 이미지가 연결된 문제 다시 표시
+    localStorage.setItem(
+      "myQuizQuestions",
+      JSON.stringify(questions)
+    );
+
     render();
 
+    $("questionStatus").textContent =
+      `${questions.length}개 문제를 불러왔습니다.`;
+
   } catch (error) {
-    $("imageStatus").textContent =
+    $("questionStatus").textContent =
       "업로드 실패: " + error.message;
   }
 
@@ -350,7 +361,8 @@ function render() {
     if (q.image) {
       const img = document.createElement("img");
       img.src = q.image;
-      img.alt = "문제 참고그림";
+      img.className = "question-image";
+      img.alt = `문제 ${i + 1} 참고그림`;
       img.style.display = "block";
       img.style.maxWidth = "100%";
       img.style.maxHeight = "420px";
@@ -378,7 +390,30 @@ function render() {
     section.appendChild(img);
     
   }    
-const options = section.querySelector(".options");
+  const options = section.querySelector(".options");
+  if (Array.isArray(q.options)) {
+    q.options.forEach((option, j) => {
+      const label = document.createElement("label");
+      label.className = "option";
+
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `q${i}`;
+      input.value = j;
+
+      input.addEventListener("change", () => {
+        instantFeedback(i);
+        updateScorePreview();
+      });
+
+      const span = document.createElement("span");
+      span.textContent = `${j + 1}. ${option}`;
+
+      label.appendChild(input);
+      label.appendChild(span);
+      options.appendChild(label);
+    });
+  }
     $("quiz").appendChild(section);
   });
 
