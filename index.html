@@ -242,14 +242,17 @@ textarea:focus {
 
   <p id="imageStatus">아직 불러온 이미지가 없습니다.</p>
   <div id="imagePreview"></div>
+  <input type="file" id="questionJsonFile" accept=".json">
+  <span id="questionStatus"></span>
 </section>
+
 </main>
 <footer>문제와 답안은 이 페이지 안에서만 처리되며 서버로 전송되지 않습니다.</footer>
 
 <script>
-const initialQuestions = [
-
-];
+const initialQuestions = JSON.parse(
+  localStorage.getItem("myQuizQuestions") || "[]"
+);
 
 let questions = structuredClone(initialQuestions);
 let graded = false;
@@ -480,7 +483,29 @@ function grade(reveal = false) {
         : `정답: "${q.answer}". ${q.explanation}`;
     }
   });
+  $("questionJsonFile").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
+    try {
+      const json = JSON.parse(await file.text());
+
+      if (!Array.isArray(json.questions)) {
+        throw new Error("questions 배열이 없는 JSON입니다.");
+      }
+
+      questions = json.questions;
+      localStorage.setItem("myQuizQuestions", JSON.stringify(questions));
+
+      render();
+      $("questionStatus").textContent =
+        `${questions.length}개 문제를 불러왔습니다.`;
+    } catch (error) {
+      $("questionStatus").textContent = "업로드 실패: " + error.message;
+    }
+
+    event.target.value = "";
+  });
   graded = true;
   $("score").textContent = `${correct} / ${questions.length}`;
   $("result").classList.add("show");
