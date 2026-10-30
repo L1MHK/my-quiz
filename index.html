@@ -245,7 +245,62 @@ const initialQuestions = [
 let questions = structuredClone(initialQuestions);
 let graded = false;
 const $ = id => document.getElementById(id);
+// 이미지 JSON 저장 공간
+let imageLibrary = {};
 
+// 이미지 JSON 파일 업로드
+$("imageJsonFile").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const json = JSON.parse(text);
+
+    if (!json.images || typeof json.images !== "object") {
+      throw new Error("images 항목이 없는 JSON입니다.");
+    }
+
+    imageLibrary = json.images;
+
+    $("imageStatus").textContent =
+      `${Object.keys(imageLibrary).length}개 이미지를 불러왔습니다.`;
+
+    showImagePreview();
+
+    // 이미지가 연결된 문제 다시 표시
+    render();
+
+  } catch (error) {
+    $("imageStatus").textContent =
+      "업로드 실패: " + error.message;
+  }
+
+  event.target.value = "";
+});
+
+// 이미지 미리보기
+function showImagePreview() {
+  const preview = $("imagePreview");
+  preview.replaceChildren();
+
+  Object.entries(imageLibrary).forEach(([id, item]) => {
+    const container = document.createElement("div");
+    container.style.margin = "12px 0";
+
+    const img = document.createElement("img");
+    img.src = item.data;
+    img.alt = item.name || id;
+    img.style.maxWidth = "180px";
+    img.style.display = "block";
+
+    const label = document.createElement("p");
+    label.textContent = `${id} (${item.name || "이름 없음"})`;
+
+    container.append(img, label);
+    preview.appendChild(container);
+  });
+}
 function render() {
   $("quiz").innerHTML = "";
 
@@ -289,6 +344,19 @@ function render() {
         section.querySelector(".qtop").after(img);
       }
     }
+  // 이미지 ID로 이미지 찾아서 표시
+  if (q.imageId && imageLibrary[q.imageId]) {
+    const img = document.createElement("img");
+    img.src = imageLibrary[q.imageId].data;
+    img.alt = "문제 이미지";
+    img.style.maxWidth = "100%";
+    img.style.maxHeight = "400px";
+    img.style.objectFit = "contain";
+    img.style.display = "block";
+    img.style.margin = "15px auto";
+
+    section.appendChild(img);
+  }    
 const options = section.querySelector(".options");
 
     q.options.forEach((option, j) => {
