@@ -82,6 +82,12 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .panel { padding: 18px; margin-top: 18px; }
 .panel h2 { font-size: 1.05rem; margin: 0 0 8px; }
 .panel p, .hint { color: var(--muted); font-size: .92rem; }
+.question-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0;
+}
 .passage {
   white-space: pre-wrap;
   background: #f5f7fc;
@@ -329,7 +335,7 @@ function render() {
       <div class="options"></div>
       <div class="feedback" id="feedback-${i}" aria-live="polite"></div>
     `;
-
+      
     section.querySelector(".qtitle").textContent = q.question;
 
     // 지문이 있으면 문제 제목 아래에 표시
@@ -372,24 +378,7 @@ function render() {
     section.appendChild(img);
     
   }    
-  $("quiz").appendChild(section);
 const options = section.querySelector(".options");
-
-    q.options.forEach((option, j) => {
-      const label = document.createElement("label");
-      label.className = "option";
-      label.innerHTML = `
-        <input type="radio" name="q${i}" value="${j}">
-        <span class="opt-text"></span>
-      `;
-      label.querySelector(".opt-text").textContent = `${j + 1}. ${option}`;
-      label.querySelector("input").addEventListener("change", () => {
-        updateStats();
-        instantFeedback(i);
-      });
-      options.appendChild(label);
-    });
-
     $("quiz").appendChild(section);
   });
 
