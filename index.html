@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>데이터 모델링 퀴즈 연습</title>
+<style>
+:root {
+  color-scheme: dark;
+
+  --bg: #12141a;
+  --panel: #1c2029;
+  --text: #e2e6ef;
+  --muted: #9ba5b7;
+  --line: #343b49;
+
+  --primary: #8490ff;
+  --primary-soft: #292e4a;
+
+  --green: #75d99b;
+  --green-bg: #193729;
+
+  --red: #ff8585;
+  --red-bg: #3b2227;
+
+  --shadow: 0 8px 28px rgba(0, 0, 0, .18);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.55;
+}
+header {
+  padding: 32px 20px 24px; text-align: center;
+  background: linear-gradient(135deg, #263a9b, #6878ee); color: white;
+}
+header h1 { margin: 0 0 8px; font-size: clamp(1.55rem, 4vw, 2.2rem); }
+header p { margin: 0; opacity: .9; }
+main { max-width: 920px; margin: 24px auto 60px; padding: 0 16px; }
+.toolbar, .panel, .question, .result {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 16px; box-shadow: var(--shadow);
+}
+.toolbar { padding: 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+button {
+  border: 0; border-radius: 10px; padding: 10px 15px; font: inherit;
+  font-weight: 650; cursor: pointer; transition: transform .08s, opacity .15s;
+}
+button:active { transform: translateY(1px); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.primary { background: var(--primary); color: white; }
+.secondary { background: #eef1f7; color: #293149; }
+.outline { background: white; color: var(--primary); border: 1px solid #cbd1ff; }
+.danger { background: #fff0f0; color: #ad2929; }
+.stats { display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: .94rem; margin-left: auto; }
+.progress { height: 7px; background: #e8ebf4; border-radius: 99px; overflow: hidden; width: 100%; }
+.progress > div { height: 100%; width: 0; background: var(--primary); transition: width .2s; }
+.question { padding: 20px; margin-bottom: 14px; }
+.qtop { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.qnum { flex-shrink: 0; background: var(--primary-soft); color: var(--primary); font-weight: 750; border-radius: 8px; padding: 4px 9px; font-size: .88rem; }
+.qtitle { margin: 2px 0 0; font-weight: 700; font-size: 1.06rem; }
+.options { display: grid; gap: 9px; }
+.option {
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 13px;
+  border: 1px solid var(--line); border-radius: 11px; cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.option:hover { border-color: #aeb7ed; background: #fafaff; }
+.option input { margin-top: 5px; accent-color: var(--primary); flex-shrink: 0; }
+.opt-text { flex: 1; }
+.option.correct { border-color: #71c596; background: var(--green-bg); color: #12663a; }
+.option.wrong { border-color: #e59a9a; background: var(--red-bg); color: #a62424; }
+.option input:disabled { cursor: default; }
+.feedback { display: none; margin-top: 14px; padding: 12px 14px; border-radius: 10px; white-space: pre-wrap; }
+.feedback.show { display: block; }
+.feedback.good { color: #12663a; background: var(--green-bg); }
+.feedback.bad { color: #9f2525; background: var(--red-bg); }
+.result { display: none; padding: 18px 20px; margin: 18px 0; }
+.result.show { display: block; }
+.result p { color: var(--muted); }
+.panel { padding: 18px; margin-top: 18px; }
+.panel h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.panel p, .hint { color: var(--muted); font-size: .92rem; }
+.passage {
+  white-space: pre-wrap;
+  background: #f5f7fc;
+  border: 1px solid #dfe4ef;
+  border-radius: 10px;
+  padding: 16px;
+  margin: 12px 0 16px;
+  line-height: 1.7;
+}
+textarea {
+  width: 100%; min-height: 250px; resize: vertical; padding: 12px;
+  border: 1px solid var(--line); border-radius: 10px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #263149; background: #fbfcff;
+}
+.editor-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+#editStatus { font-size: .9rem; color: var(--muted); }
+footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 0 16px 28px; }
+@media (max-width: 600px) {
+  .toolbar { align-items: stretch; }
+  .toolbar button { width: 100%; }
+  .stats { margin-left: 0; width: 100%; }
+  .question { padding: 15px; }
+  .qtop { gap: 9px; }
+}
+/* 다크모드 보정 */
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.toolbar,
+.panel,
+.question,
+.result {
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+.secondary {
+  background: #2b303d;
+  color: var(--text);
+}
+
+.outline {
+  background: #202431;
+  color: #aab2ff;
+  border-color: #505a8e;
+}
+
+.option {
+  background: #20242e;
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.option:hover {
+  background: #292e3a;
+  border-color: #727fe8;
+}
+
+.option.correct {
+  background: var(--green-bg);
+  color: var(--green);
+  border-color: #387b56;
+}
+
+.option.wrong {
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: #88464b;
+}
+
+.passage {
+  background: #202530;
+  border-color: #394253;
+  color: #dce2ed;
+}
+
+textarea {
+  background: #151820;
+  color: #dce2ed;
+  border-color: #394253;
+  caret-color: #aab2ff;
+}
+
+textarea:focus {
+  outline: 2px solid #6978e8;
+  outline-offset: 1px;
+}
+
+.progress {
+  background: #303644;
+}
+
+.progress > div {
+  background: var(--primary);
+}
+
+.feedback.good {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.feedback.bad {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+.danger {
+  background: #3b2227;
+  color: #ff9999;
+}
+
+::selection {
+  background: #515eac;
+  color: white;
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>📝 데이터 모델링 퀴즈 연습</h1>
+  <p>답을 선택하면 즉시 채점하고 해설을 보여줍니다.</p>
+</header>
+
+<main>
+  <div class="toolbar">
+    <button class="primary" id="grade">전체 채점</button>
+    <button class="secondary" id="showAll">정답·해설 보기</button>
+    <button class="outline" id="shuffle">🔀 문제와 보기 섞기</button>
+    <button class="secondary" id="reset">다시 풀기</button>
+    <div class="stats">
+      <span>응답 <strong id="answered">0 / 0</strong></span>
+      <span>점수 <strong id="score">-</strong></span>
+    </div>
+    <div class="progress" aria-label="풀이 진행률"><div id="bar"></div></div>
+  </div>
+
+  <div id="result" class="result" aria-live="polite"></div>
+  <div id="quiz"></div>
+
+  <section class="panel">
+    <h2>문제 편집기</h2>
+    <p>문제 JSON을 수정한 뒤 적용할 수 있습니다. 정답은 <code>answer</code>에 보기 텍스트 그대로 입력하세요. 정답 텍스트는 해당 문제의 보기 중 하나와 정확히 일치해야 합니다.</p>
+    <textarea id="editor" spellcheck="false" aria-label="문제 JSON 편집기"></textarea>
+    <div class="editor-actions">
+      <button class="primary" id="apply">문제 적용</button>
+      <button class="secondary" id="restore">초기 문제 복원</button>
+      <span id="editStatus" role="status"></span>
+    </div>
+    <p class="hint">예: <code>"answer": "추상화"</code> · 같은 문제 안에서 보기 텍스트는 중복되지 않게 작성하세요.</p>
+  </section>
+</main>
+<footer>문제와 답안은 이 페이지 안에서만 처리되며 서버로 전송되지 않습니다.</footer>
+
+<script>
+const initialQuestions = [
+
+];
+
+let questions = structuredClone(initialQuestions);
+let graded = false;
+const $ = id => document.getElementById(id);
+
+function render() {
+  $("quiz").innerHTML = "";
+
+  questions.forEach((q, i) => {
+    const section = document.createElement("section");
+    section.className = "question";
+    section.innerHTML = `
+      <div class="qtop">
+        <span class="qnum">문제 ${i + 1}</span>
+        <p class="qtitle"></p>
+      </div>
+      <div class="options"></div>
+      <div class="feedback" id="feedback-${i}" aria-live="polite"></div>
+    `;
+
+    section.querySelector(".qtitle").textContent = q.question;
+
+    // 지문이 있으면 문제 제목 아래에 표시
+    if (q.passage) {
+      const passage = document.createElement("div");
+      passage.className = "passage";
+      passage.textContent = q.passage;
+      section.querySelector(".qtop").after(passage);
+    }
+
+    // 참고 그림이 있으면 지문 아래에 표시
+    if (q.image) {
+      const img = document.createElement("img");
+      img.src = q.image;
+      img.alt = "문제 참고그림";
+      img.style.display = "block";
+      img.style.maxWidth = "100%";
+      img.style.maxHeight = "420px";
+      img.style.objectFit = "contain";
+      img.style.margin = "12px auto 18px";
+      img.style.borderRadius = "8px";
+
+      if (q.passage) {
+        section.querySelector(".passage").after(img);
+      } else {
+        section.querySelector(".qtop").after(img);
+      }
+    }
+const options = section.querySelector(".options");
+
+    q.options.forEach((option, j) => {
+      const label = document.createElement("label");
+      label.className = "option";
+      label.innerHTML = `
+        <input type="radio" name="q${i}" value="${j}">
+        <span class="opt-text"></span>
+      `;
+      label.querySelector(".opt-text").textContent = `${j + 1}. ${option}`;
+      label.querySelector("input").addEventListener("change", () => {
+        updateStats();
+        instantFeedback(i);
+      });
+      options.appendChild(label);
+    });
+
+    $("quiz").appendChild(section);
+  });
+
+  $("editor").value = JSON.stringify(questions, null, 2);
+  graded = false;
+  $("result").classList.remove("show");
+  $("result").innerHTML = "";
+  updateStats();
+}
+
+function updateStats() {
+  let answered = 0;
+  questions.forEach((_, i) => {
+    if (document.querySelector(`input[name="q${i}"]:checked`)) answered++;
+  });
+  $("answered").textContent = `${answered} / ${questions.length}`;
+  $("bar").style.width = `${answered / Math.max(questions.length, 1) * 100}%`;
+  if (!graded) $("score").textContent = "-";
+}
+
+function instantFeedback(i) {
+  const q = questions[i];
+  const selected = document.querySelector(`input[name="q${i}"]:checked`);
+  if (!selected) return;
+
+  const selectedText = q.options[Number(selected.value)];
+  const isCorrect = selectedText === q.answer;
+  const feedback = $(`feedback-${i}`);
+  const labels = [...document.querySelectorAll(`input[name="q${i}"]`)]
+    .map(el => el.closest(".option"));
+
+  labels.forEach((label, j) => {
+    label.classList.remove("correct", "wrong");
+    const optionText = q.options[j];
+    if (optionText === q.answer) label.classList.add("correct");
+    if (optionText === selectedText && !isCorrect) label.classList.add("wrong");
+    label.querySelector("input").disabled = true;
+  });
+
+  feedback.className = `feedback show ${isCorrect ? "good" : "bad"}`;
+  feedback.textContent = isCorrect
+    ? `정답입니다! 🎉 ${q.explanation}`
+    : `오답입니다. 정답은 "${q.answer}"입니다. ${q.explanation}`;
+
+  updateScorePreview();
+}
+
+function updateScorePreview() {
+  let answered = 0, correct = 0;
+  questions.forEach((q, i) => {
+    const selected = document.querySelector(`input[name="q${i}"]:checked`);
+    if (selected) {
+      answered++;
+      if (q.options[Number(selected.value)] === q.answer) correct++;
+    }
+  });
+  $("score").textContent = `${correct} / ${questions.length}`;
+  graded = answered > 0;
+}
+
+function grade(reveal = false) {
+  let answered = 0, correct = 0;
+
+  questions.forEach((q, i) => {
+    const selected = document.querySelector(`input[name="q${i}"]:checked`);
+    if (selected) answered++;
+
+    const selectedText = selected ? q.options[Number(selected.value)] : null;
+    const isCorrect = selectedText === q.answer;
+    if (selected && isCorrect) correct++;
+
+    const feedback = $(`feedback-${i}`);
+    feedback.className = `feedback show ${isCorrect ? "good" : "bad"}`;
+
+    const labels = [...document.querySelectorAll(`input[name="q${i}"]`)]
+      .map(el => el.closest(".option"));
+
+    labels.forEach((label, j) => {
+      label.classList.remove("correct", "wrong");
+      if (q.options[j] === q.answer) label.classList.add("correct");
+      if (selected && q.options[j] === selectedText && !isCorrect) {
+        label.classList.add("wrong");
+      }
+      label.querySelector("input").disabled = true;
+    });
+
+    if (!selected && !reveal) {
+      feedback.textContent = "아직 답을 선택하지 않았어요.";
+      feedback.className = "feedback show";
+    } else {
+      feedback.textContent = isCorrect
+        ? `정답입니다! ${q.explanation}`
+        : `정답: "${q.answer}". ${q.explanation}`;
+    }
+  });
+
+  graded = true;
+  $("score").textContent = `${correct} / ${questions.length}`;
+  $("result").classList.add("show");
+  $("result").innerHTML = `
+    <h2 style="margin:0 0 6px">채점 결과: ${correct} / ${questions.length}개</h2>
+    <p style="margin:0">응답한 문제 ${answered}개 · 정답률 ${Math.round(correct / Math.max(questions.length, 1) * 100)}%</p>
+    <p style="margin:.5rem 0 0;color:var(--muted)">초록색은 정답, 빨간색은 선택한 오답입니다.</p>
+  `;
+}
+
+function shuffleQuestions() {
+  // 문제 순서 섞기
+  for (let i = questions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [questions[i], questions[j]] = [questions[j], questions[i]];
+  }
+
+  // 각 문제의 보기 순서 섞기. answer 텍스트는 변경하지 않음.
+  questions.forEach(q => {
+    for (let i = q.options.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [q.options[i], q.options[j]] = [q.options[j], q.options[i]];
+    }
+  });
+
+  render();
+  $("editStatus").textContent = "문제와 보기 순서를 섞었습니다.";
+}
+
+$("grade").addEventListener("click", () => grade(false));
+$("showAll").addEventListener("click", () => grade(true));
+$("shuffle").addEventListener("click", shuffleQuestions);
+$("reset").addEventListener("click", render);
+
+$("apply").addEventListener("click", () => {
+  try {
+    const parsed = JSON.parse($("editor").value);
+    if (!Array.isArray(parsed) || parsed.length < 1) {
+      throw new Error("문제 배열이 비어 있습니다.");
+    }
+
+    parsed.forEach((q, i) => {
+      if (
+        typeof q.question !== "string" || !q.question.trim() ||
+        !Array.isArray(q.options) || q.options.length < 2 ||
+        q.options.some(option => typeof option !== "string" || !option.trim()) ||
+        new Set(q.options).size !== q.options.length ||
+        typeof q.answer !== "string" ||
+        !q.options.includes(q.answer) ||
+        typeof q.explanation !== "string" || !q.explanation.trim()
+      ) {
+        throw new Error(
+          `${i + 1}번 문제를 확인하세요. question, options, answer(보기 텍스트), explanation이 필요하며 보기 텍스트는 중복될 수 없습니다.`
+        );
+      }
+    });
+
+    questions = parsed;
+    localStorage.setItem(
+    "myQuizQuestions",
+    JSON.stringify(questions)
+    );
+    render();
+    $("editStatus").textContent = "문제를 적용했습니다.";
+  } catch (e) {
+    $("editStatus").textContent = "적용 실패: " + e.message;
+  }
+});
+
+$("restore").addEventListener("click", () => {
+  questions = structuredClone(initialQuestions);
+  localStorage.removeItem("myQuizQuestions");
+  render();
+  $("editStatus").textContent = "초기 문제로 복원했습니다.";
+});
+try {
+  const savedQuestions = localStorage.getItem("myQuizQuestions");
+
+  if (savedQuestions) {
+    const parsed = JSON.parse(savedQuestions);
+
+    if (Array.isArray(parsed)) {
+      questions = parsed;
+    }
+  }
+} catch (e) {
+  console.warn("저장된 문제를 불러오지 못했습니다.", e);
+}
+
+render();
+</script>
+</body>
+</html>
